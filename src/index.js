@@ -42,6 +42,48 @@ module.exports = {
             const deletedPost = await strapi.entityService.delete('api::post.post', args.id)
             return toEntityResponse(deletedPost)
           },
+          //COMMENT
+          createComment: async (_, args, ctx) => {
+            const { toEntityResponse } = strapi.plugin('graphql').service('format').returnTypes
+
+            const comment = await strapi.entityService.create('api::comment.comment', {
+              data: { ...args.data, user: ctx.state.user.id },
+            })
+
+            return toEntityResponse(comment)
+          },
+          updateComment: async (_, args, ctx) => {
+            const { toEntityResponse } = strapi.plugin('graphql').service('format').returnTypes
+            const comment = await strapi.entityService.findOne('api::comment.comment', args.id, {
+              populate: { user: true },
+            })
+
+            if (comment.user.id !== ctx.state.user.id) {
+              throw new Error('You are not authorized to update this comment')
+            }
+
+            const updatedComment = await strapi.entityService.update(
+              'api::comment.comment',
+              args.id,
+              args,
+            )
+            return toEntityResponse(updatedComment)
+          },
+          deleteComment: async (_, args, ctx) => {
+            const { toEntityResponse } = strapi.plugin('graphql').service('format').returnTypes
+            const comment = await strapi.entityService.findOne('api::comment.comment', args.id, {
+              populate: { user: true },
+            })
+
+            if (comment.user.id !== ctx.state.user.id) {
+              throw new Error('You are not authorized to delete this comment')
+            }
+            const deletedComment = await strapi.entityService.delete(
+              'api::comment.comment',
+              args.id,
+            )
+            return toEntityResponse(deletedComment)
+          },
         },
       },
     })
